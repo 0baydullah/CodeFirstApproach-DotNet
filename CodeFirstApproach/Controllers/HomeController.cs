@@ -1,5 +1,6 @@
 using CodeFirstApproach.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 
 namespace CodeFirstApproach.Controllers
@@ -20,11 +21,116 @@ namespace CodeFirstApproach.Controllers
             this.studentDB = studentDB;
         }
 
-        public IActionResult Index()
+        public async Task< IActionResult> Index()
         {
-            var stdData = studentDB.Students.ToList();
+            var stdData = await studentDB.Students.ToListAsync();
             return View(stdData);
         }
+
+        public IActionResult Create()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task< IActionResult> Create(Student std)
+        {
+            if (ModelState.IsValid)
+            {
+                await studentDB.Students.AddAsync(std);
+                await studentDB.SaveChangesAsync();
+                TempData["insert_success"] = "Inserted...!";
+                return RedirectToAction("Index");
+            }
+            return View(std);
+        }
+
+        public async Task<IActionResult> Details( int? id)
+        {
+            if(id == null || studentDB.Students == null)
+            {
+                return NotFound();
+            }
+            var stdData = await studentDB.Students.FirstOrDefaultAsync(x => x.Id == id);
+            if(stdData == null)
+            {
+                return NotFound();
+            }
+            return View(stdData);
+        }
+
+        
+        public async Task<IActionResult> Edit(int ? id)
+        {
+            if (id == null || studentDB.Students == null)
+            {
+                return NotFound();
+            }
+            var stdData = await studentDB.Students.FindAsync(id);
+            if (stdData == null)
+            {
+                return NotFound();
+            }
+            return View(stdData);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int ? id ,Student std)
+        {
+            if(id != std.Id)
+            {
+                return NotFound();
+            }
+            if (ModelState.IsValid)
+            {
+                studentDB.Update(std);
+                await studentDB.SaveChangesAsync();
+                TempData["Edit_success"] = "Edited...!";
+                return RedirectToAction("Index");
+            }
+            return View(std);
+        }
+
+        public async Task<IActionResult> Delete(int? id)
+        {
+            if (id == null || studentDB.Students == null)
+            {
+                return NotFound();
+            }
+            var stdData = await studentDB.Students.FindAsync(id);
+            if (stdData == null)
+            {
+                return NotFound();
+            }
+            return View(stdData);
+        }
+
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int? id)
+        {
+            if (id == null || studentDB.Students == null)
+            {
+                return NotFound();
+            }
+            var stdData = await studentDB.Students.FindAsync(id);
+            if (stdData != null)
+            {
+                studentDB.Students.Remove(stdData);
+            }
+            await studentDB.SaveChangesAsync();
+            TempData["delete_success"] = "deleted...!";
+
+            return RedirectToAction("Index");
+        }
+
+
+
+
+
+
 
         public IActionResult Privacy()
         {
